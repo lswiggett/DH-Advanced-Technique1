@@ -1,0 +1,7 @@
+# Deploy-only requirements for Render (no Jupyter)
+requests
+pandas
+dash
+dash_bootstrap_components
+plotly
+gunicorn

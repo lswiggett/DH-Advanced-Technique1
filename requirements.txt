@@ -1,0 +1,10 @@
+# Local working environment (includes Jupyter). Install with: pip install -r requirements.txt
+requests
+pandas
+dash
+dash_bootstrap_components
+plotly
+gunicorn
+jupyterlab
+ipykernel
+nbformat
