@@ -1,8 +1,49 @@
-# Paste the complete dashboard code here, then end with:
-%run 02_data_retrieval_and_cleaning.ipynb
+# Standalone tutorial dashboard for Render (combines notebooks 02 and 03).
+# Run locally with:  python app.py   — on Render: gunicorn app:server
+
+# --- Imports (notebook 02) ---
+import requests
+import pandas as pd
+from io import StringIO
+import dash
+from dash import dcc
+from dash import html
+from dash.dependencies import Input, Output
+import dash_bootstrap_components as dbc
+import plotly.express as px
+
+# --- Data retrieval (notebook 02) ---
+start_day_str = '20211228'
+last_day_str = '20221231'
+
+query_url_ukr = f"https://api.gdeltproject.org/api/v2/tv/tv?query=(ukraine%20OR%20ukrainian%20OR%20zelenskyy%20OR%20zelensky%20OR%20kiev%20OR%20kyiv)%20market:%22National%22&mode=timelinevol&format=html&datanorm=perc&format=csv&timelinesmooth=5&datacomb=sep&timezoom=yes&STARTDATETIME={start_day_str}120000&ENDDATETIME={last_day_str}120000"
+
+query_url_rus = f"https://api.gdeltproject.org/api/v2/tv/tv?query=(kremlin%20OR%20russia%20OR%20putin%20OR%20moscow%20OR%20russian)%20market:%22National%22&mode=timelinevol&format=html&datanorm=perc&format=csv&timelinesmooth=5&datacomb=sep&timezoom=yes&STARTDATETIME={start_day_str}120000&ENDDATETIME={last_day_str}120000"
+
+def to_df(queryurl):
+  response = requests.get(queryurl)
+  content_text = StringIO(response.content.decode('utf-8'))
+  df = pd.read_csv(content_text)
+  return df
+
+df_ukr = to_df(query_url_ukr)
+df_rus = to_df(query_url_rus)
+
+# --- Cleaning (notebook 02) ---
+df_ukr = df_ukr.rename(columns={df_ukr.columns[0]: "date_col"})
+df_rus = df_rus.rename(columns={df_rus.columns[0]: "date_col"})
+
+df_ukr['date_col'] = pd.to_datetime(df_ukr['date_col'])
+df_rus['date_col'] = pd.to_datetime(df_rus['date_col'])
+
+df_rus = df_rus[[x in ['CNN', 'FOXNEWS', 'MSNBC'] for x in df_rus.Series]]
+df_ukr = df_ukr[[x in ['CNN', 'FOXNEWS', 'MSNBC'] for x in df_ukr.Series]]
+
+# --- App instance (notebook 03) ---
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.LITERA])
 server = app.server
-# Type the code from this section of the lesson here.
+
+# --- Frontend (notebook 03) ---
 app.layout = dbc.Container(
     [   dbc.Row([ # row 1
         dbc.Col([html.H1('US National Television News Coverage of the War in Ukraine')],
@@ -25,24 +66,25 @@ app.layout = dbc.Container(
     ]),
 
      dbc.Row([ # row 4
-              dbc.Col(dcc.Graph(id='line-graph-ukr'), 
+              dbc.Col(dcc.Graph(id='line-graph-ukr'),
                       )
      ]),
 
     dbc.Row([ # row 5
-              dbc.Col(dcc.Graph(id='line-graph-rus'), 
+              dbc.Col(dcc.Graph(id='line-graph-rus'),
                       )
      ])
 
     ])
-# Type the code from this section of the lesson here.
+
+# --- Backend (notebook 03) ---
 
 # callback decorator
 @app.callback(
     Output('line-graph-ukr', 'figure'),
     Output('line-graph-rus', 'figure'),
     Input('date-range', 'start_date'),
-    Input('date-range', 'end_date')   
+    Input('date-range', 'end_date')
 )
 
 # callback function
@@ -54,12 +96,12 @@ def update_output(start_date, end_date):
     df_rus_filtered = df_rus.loc[mask_rus]
 
     # create line graphs based on filtered dataframes
-    line_fig_ukr = px.line(df_ukr_filtered, x="date_col", y="Value", 
+    line_fig_ukr = px.line(df_ukr_filtered, x="date_col", y="Value",
                      color='Series', title="Coverage of Ukrainian Keywords")
-    line_fig_rus = px.line(df_rus_filtered, x='date_col', y='Value', 
+    line_fig_rus = px.line(df_rus_filtered, x='date_col', y='Value',
                      color='Series', title="Coverage of Russian Keywords")
 
-    # set x-axis title and y-axis title in line graphs 
+    # set x-axis title and y-axis title in line graphs
     line_fig_ukr.update_layout(
                    xaxis_title='Date',
                    yaxis_title='Percentage of Airtime')
@@ -67,11 +109,11 @@ def update_output(start_date, end_date):
                    xaxis_title='Date',
                    yaxis_title='Percentage of Airtime')
 
-    # set label format on x-axis in line graphs 
+    # set label format on x-axis in line graphs
     line_fig_ukr.update_xaxes(tickformat="%b %d<br>%Y")
     line_fig_rus.update_xaxes(tickformat="%b %d<br>%Y")
 
     return line_fig_ukr, line_fig_rus
 
-# if __name__ == '__main__':
-#     app.run(debug=True)
+if __name__ == '__main__':
+    app.run(debug=True)
