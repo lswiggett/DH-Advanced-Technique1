@@ -24,6 +24,6 @@ Choose the **Python (ph-dash)** kernel in each notebook.
 
 ## Folders
 - `tutorial_app/`: deployable tutorial apps (`app.py`, `app-rq2.py`), exported from notebooks 03 and 05
-- `my_dashboard/`: my final `app.py`, exported from notebook 06, then copied to its own private deploy repo
+- `my_dashboard/`: my final `app.py`, exported from notebook 06, deployed to Render from this repo (Root Directory `my_dashboard`)
 - `data/`: datasets
 - `archive/`: my first attempt at the lesson (before this repo existed)
